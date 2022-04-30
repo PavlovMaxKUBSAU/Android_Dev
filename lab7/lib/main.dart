@@ -1,14 +1,14 @@
-//import 'dart:html';
-//import 'dart:js';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
+  HttpOverrides.global = SecHttpOverrides();
   runApp(const MyApp());
 }
 
@@ -40,19 +40,15 @@ class Page1 extends State<HomePage1> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(widget.title, style: const TextStyle(color: Colors.white)),
+          title:
+              Text(widget.title, style: const TextStyle(color: Colors.white)),
           backgroundColor: Colors.green,
         ),
         body: FutureBuilder<List<TheInfo>>(
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const Center(
-                child: Text(
-                  'При запросе произошла ошибка',
-                  style: TextStyle(fontSize: 40, color: Colors.black45),
-                  textAlign: TextAlign.center,
-                ),
-              );
+                child: Text('При запросе произошла ошибка', style: TextStyle(fontSize: 40, color: Colors.black45), textAlign: TextAlign.center),);
             } else if (snapshot.hasData) {
               return ShownInfo(infoList: snapshot.data!);
             } else {
@@ -79,14 +75,23 @@ class ShownInfo extends StatelessWidget {
     return ListView.builder(
       itemBuilder: (context, index) {
         return Card(
-          child: Column(
-            children: [
-              Image.network(infoList[index].photo_url),
-              Text(infoList[index].date.toString()),
-              Container(height: 20),
-              Text(infoList[index].PREVIEW_TEXT),
-              Text(infoList[index].text),
-            ],
+          margin: const EdgeInsets.all(20),
+          //color: const Color.fromRGBO(255, 255, 255, 0.9),
+          shadowColor: Colors.grey,
+          elevation: 10,
+          child: Card(
+            margin: const EdgeInsets.all(10),
+            elevation: 0,
+            child: Column(
+              children: [
+                Image.network(infoList[index].photo_url.replaceFirst('//', '//old.')), ///necessary to replace 'kubsau.ru' to 'old.kubsau.ru' domain
+                Text(infoList[index].date.toString()),
+                Container(height: 20),
+                Text(infoList[index].PREVIEW_TEXT),
+                Container(height: 10),
+                Text(Bidi.stripHtmlIfNeeded(infoList[index].text)),
+              ],
+            ),
           ),
         );
       },
@@ -110,14 +115,14 @@ List<TheInfo> parseInfo(String replyBody) {
 
 
 class TheInfo {
-  final int ID;
-  final DateTime date;
+  final String ID;
+  final String date;
   final String title;
   final String PREVIEW_TEXT;
   final String photo_url;
   final String page_url;
   final String text;
-  final DateTime lastDate;
+  final String lastDate;
 
   TheInfo({
     required this.ID,
@@ -132,21 +137,20 @@ class TheInfo {
 
   factory TheInfo.converter(Map<String, dynamic> json) {
     return TheInfo(
-      ID: json['ID'] as int,
-      date: json['ACTIVE_FROM'] as DateTime,
+      ID: json['ID'] as String,
+      date: json['ACTIVE_FROM'] as String,
       title: json['TITLE'] as String,
       PREVIEW_TEXT: json['PREVIEW_TEXT'] as String,
       photo_url: json['PREVIEW_PICTURE_SRC'] as String,
       page_url: json['DETAIL_PAGE_URL'] as String,
       text: json['DETAIL_TEXT'] as String,
-      lastDate: json['LAST_MODIFIED'] as DateTime,
+      lastDate: json['LAST_MODIFIED'] as String,
     );
   }
 }
 
 
-
-class HttpsOverrides extends HttpOverrides {
+class SecHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
